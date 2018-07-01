@@ -11,7 +11,7 @@ app.json_encoder = ExtendedJSONEncoder
 def synagogue():
     if request.method == 'GET':
         params = {}
-        for a,v in request.args.items():
+        for a, v in request.args.items():
             params[a] = v
         res = get_synagogue(**params)
         if res:
