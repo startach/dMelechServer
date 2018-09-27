@@ -15,6 +15,5 @@ sudo cp /srv/src/dMelechServer/apache_conf/jworld.startach.org.il.conf /etc/apac
 sudo a2ensite jworld.startach.org.il
 sudo a2dissite 000-default  # and for good measure, let's disable the default placeholder site
 
-
 sudo service apache2 restart
 #sudo apachectl restart
