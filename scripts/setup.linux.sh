@@ -9,6 +9,12 @@ sudo apt-get install libapache2-mod-wsgi python-pip git
 mkdir -p /srv/src
 cd /srv/src
 sudo git clone https://github.com/startach/dMelechServer.git
-cd scripts
-sudo pip install -r requirements.txt
+sudo pip install -r dMelechServer/scripts/requirements.txt
+
+sudo cp /srv/src/dMelechServer/apache_conf/jworld.startach.org.il.conf /etc/apache2/sites-available
+sudo a2ensite jworld.startach.org.il
+sudo a2dissite 000-default  # and for good measure, let's disable the default placeholder site
+
+
 sudo service apache2 restart
+#sudo apachectl restart
