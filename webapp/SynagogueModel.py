@@ -2,8 +2,16 @@ from pymodm import fields, EmbeddedMongoModel, MongoModel
 from pymodm import connect
 from bson import ObjectId
 import requests
+import datetime
+import json
 
-connect("mongodb://localhost:27017/JewishWorld", alias="derech-hamelech-app")
+# connect("mongodb://localhost:27017/JewishWorld", alias="derech-hamelech-app")
+connect("mongodb://startach:gG123456@ds235022.mlab.com:35022/jewish_world", alias="derech-hamelech-app")
+
+
+def time_to_float(hour):
+    t = datetime.datetime.strptime(hour, "%H:%M").time()
+    return t.hour + t.minute / 60
 
 
 class Externals(EmbeddedMongoModel):
@@ -37,15 +45,41 @@ class Minyan(EmbeddedMongoModel):
     day = fields.CharField()\n
     """
     minyan = fields.CharField()
-    hour = fields.CharField()
+    hour = fields.CharField(blank=True)
     hour_float = fields.FloatField(blank=True, required=False)
     days = fields.ListField(field=fields.IntegerField())
+    last_verified_at = fields.CharField(default=str(datetime.datetime.now().strftime('%d/%m/%Y')))
 
     def json(self):
         return {
             "minyan": self.minyan,
             "hour": self.hour,
-            "days": self.days
+            "days": self.days,
+            "last_verified_at": self.last_verified_at
+        }
+
+    class Meta:
+        final = True
+
+
+class Lesson(EmbeddedMongoModel):
+    """
+    minyan = fields.CharField()\n
+    hour = fields.CharField()\n
+    day = fields.CharField()\n
+    """
+    name = fields.CharField()
+    hour = fields.CharField(blank=True)
+    hour_float = fields.FloatField(blank=True, required=False)
+    days = fields.ListField(field=fields.IntegerField())
+    last_verified_at = fields.CharField(default=str(datetime.datetime.now().strftime('%d/%m/%Y')))
+
+    def json(self):
+        return {
+            "name": self.minyan,
+            "hour": self.hour,
+            "days": self.days,
+            "last_verified_at": self.last_verified_at
         }
 
     class Meta:
@@ -57,7 +91,7 @@ class Synagogue(MongoModel):
     name = fields.CharField() \n
     address = fields.CharField() \n
     location = fields.PointField() \n
-    nosahc = fields.CharField() \n
+    nosach = fields.CharField() \n
     phone_number = fields.CharField() \n
     externals = fields.EmbeddedDocumentField(Externals) \n
     minyans = fields.EmbeddedDocumentListField(Minyan) \n
@@ -66,21 +100,26 @@ class Synagogue(MongoModel):
     name = fields.CharField(blank=True)
     address = fields.CharField(blank=True)
     location = fields.PointField(blank=True)
-    nosahc = fields.CharField(blank=True)
+    nosach = fields.CharField(blank=True)
     phone_number = fields.CharField(blank=True)
     externals = fields.EmbeddedDocumentField(Externals, blank=True)
     minyans = fields.EmbeddedDocumentListField(Minyan, blank=True)
+    lessons = fields.EmbeddedDocumentListField(Lesson, blank=True)
     image = fields.ImageField(blank=True)
+    comments = fields.CharField(blank=True)
 
     def json(self):
         return {
+            "syn_id": self._id,
             "name": self.name,
             "address": self.address,
             "location": self.location,
-            "nosahc": self.nosahc,
+            "nosach": self.nosach,
             "phone_number": self.phone_number,
             "externals": self.externals.json(),
             "minyans": [s.json() for s in self.minyans],
+            "lessons": [s.json() for s in self.lessons],
+            "comments": self.comments,
             "image": None
         }
 
@@ -91,48 +130,58 @@ class Synagogue(MongoModel):
 
 
 def create_synagogue(synagogue_object):
-    location = synagogue_object['location'] if synagogue_object['location'] else None
+    # location = synagogue_object['location'] if synagogue_object['location'] else None
+    #
+    # if not location:
+    #     url = "https://nominatim.openstreetmap.org/search"
+    #     params = {
+    #         'q': synagogue_object['address'],
+    #         'format': 'json',
+    #         'limit': 1,
+    #         'accept-language': 'iw'
+    #     }
+    #     r = requests.get(url, params=params)
+    #     if r.status_code == 200:
+    #         j = r.json()[0]
+    #         lat = float(j['lat'])
+    #         lon = float(j['lon'])
+    #         location = [lon, lat]
+    #     else:
+    #         location = None
+    #
+    for minyan in synagogue_object['minyans']:
+        minyan.hour_float = time_to_float(minyan.hour)
 
-    if not location:
-        url = "https://nominatim.openstreetmap.org/search"
-        params = {
-            'q': synagogue_object['address'],
-            'format': 'json',
-            'limit': 1,
-            'accept-language': 'iw'
-        }
-        r = requests.get(url, params=params)
-        if r.status_code == 200:
-            j = r.json()[0]
-            lat = float(j['lat'])
-            lon = float(j['lon'])
-            location = [lon, lat]
-        else:
-            location = None
+    for lesson in synagogue_object['lessons']:
+        lesson.hour_float = time_to_float(lesson.hour)
 
     syn = Synagogue(
-        name=synagogue_object['name'], address=synagogue_object['address'],
-        location=location, nosahc=synagogue_object['nosahc'],
-        phone_number=synagogue_object['phone_number'], image=None,
-        externals=synagogue_object['externals'], minyans=synagogue_object['minyans'])
+        address=synagogue_object['address'],
+        externals=synagogue_object['externals'],
+        location=synagogue_object['location'],
+        name=synagogue_object['name'],
+        nosach=synagogue_object['nosach'],
+        phone_number=synagogue_object['phone_number'],
+        image=None,
+        comments=synagogue_object['comments'],
+        lessons=synagogue_object['lessons'],
+        minyans=synagogue_object['minyans'])
+
     try:
         result = syn.save()
-        if result and location:
-            return True, ""
+        if result:
+            return True
         else:
-            return False, 'no_location'
+            return False
     except Exception:
-        return False, 'failed'
+        return False
 
 
-def get_synagogue(**kwargs):
-    if len(kwargs.keys()) is 1 and 'syn_id' in kwargs.keys():
-        try:
-            return Synagogue.objects.raw({'_id': ObjectId(kwargs['syn_id'])}).first()
-        except Exception:
-            return None
-    else:
-        return search_synagogue(**kwargs)
+def get_synagogue(syn_id):
+    try:
+        return Synagogue.objects.raw({'_id': ObjectId(syn_id)}).first()
+    except Exception:
+        return None
 
 
 def update_synagogue(syn_id, update_object):
@@ -150,56 +199,59 @@ def update_synagogue(syn_id, update_object):
         return False
 
 
-def search_synagogue(**kwargs):
+#final
+def search_synagogue(json_parameters):
     inner_query = {}
 
+    j = json_parameters
+
     keys = []
-    values = {}
+    values = []
 
-    for key, value in kwargs.items():
-
-        keys.append(key)
-        values[key] = value
+    for key, value in j.items():
+        v = value
+        k = key
+        
+        if key == 'name':
+            v = {"$regex": '.*' + value + '.*'}
+        elif key == 'address':
+            v = {"$regex": '.*'  + value + '.*'}
+        elif key == 'days':
+            k = "minyans.days"
+            v = {"$all": value}
+        elif key == 'hours':
+            v = {"$gt": time_to_float(hour=value[0]), "$lt": time_to_float(hour=value[1])}
+            k = "minyans.hour_float"
+        elif key in ["mikve", "parking", "disabled_access", "shtiblach" ]:
+            k = "externals." + key
 
         if value == 'true':
-            inner_query[key] = True
-        if value == 'false':
-            inner_query[key] = False
-        if value in ('none', 'null'):
-            inner_query[key] = None
+            v = True
+        elif value == 'false':
+            v = False
+        elif value in ('none', 'null'):
+            v = None
 
-        if key in ('id', '_id') or '_id' in key:
-            inner_query['_id'] = ObjectId(value)
-        elif key == 'name':
-            inner_query[key] = {"$regex": '.*' + value + '.*'}
-        elif key == 'address':
-            inner_query[key]  = {"$regex": '/' + value + '$/'}
-        elif key in ('lat', 'lon', 'min_radius', 'max_radius'):
-            pass
+        if key in ['lat', 'lon', 'min_radius', 'max_radius']:
+            keys.append(key)
         else:
-            inner_query[key] = value
+            inner_query[k] = v
 
     if set(['lat', 'lon', 'min_radius', 'max_radius']).issubset(keys):
         inner_query['location'] = {
             "$near": {
                 "$geometry": {
                     "type": "Point",
-                    "coordinates": [float(values['lon']),
-                                    float(values['lat'])]
+                    "coordinates": [float(json_parameters['lon']),
+                                    float(json_parameters['lat'])]
                 },
-                "$maxDistance": int(int(values['max_radius']) * 1000),
-                "$minDistance": int(int(values['min_radius']) * 1000),
+                "$maxDistance": int(int(json_parameters['max_radius']) * 1000),
+                "$minDistance": int(int(json_parameters['min_radius']) * 1000),
             }
         }
 
-    if len(kwargs.keys()) > 1:
-        query = {
-            "$and": [{k: v} for k, v in inner_query.items()]
-        }
-        inner_query = query
-
     try:
-        res = list(Synagogue.objects.raw(inner_query))
+        res = list(Synagogue.objects.raw(inner_query).limit(15))
         return res
     except Exception:
         return False
