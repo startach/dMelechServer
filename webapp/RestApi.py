@@ -7,6 +7,11 @@ app = Flask(__name__)
 app.json_encoder = ExtendedJSONEncoder
 
 
+@app.route('/about/', methods=['GET', 'POST', 'PUT'])
+def about():
+    return "Jworld ver 1.0", 200
+
+
 @app.route('/synagogue/', methods=['GET', 'POST', 'PUT'])
 def synagogue():
     if request.method == 'GET':
