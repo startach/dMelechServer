@@ -2,15 +2,11 @@ from flask import Flask, request, jsonify
 from ExtendedJSONEncoder import ExtendedJSONEncoder
 from SynagogueModel import get_synagogue, update_synagogue, \
     create_synagogue, search_synagogue
+from flask_cors import CORS
 
 app = Flask(__name__)
 app.json_encoder = ExtendedJSONEncoder
-
-
-@app.route('/about/', methods=['GET'])
-def about():
-    return "Jworld ver 1.0", 200
-
+CORS(app)
 
 @app.route('/synagogue/<string:syn_id>', methods=['GET', 'PUT'])
 def synagogue(syn_id):
