@@ -3,3 +3,4 @@ pymongo
 pymodm
 requests
 Pillow
+flask_cors
