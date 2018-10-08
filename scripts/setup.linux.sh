@@ -16,7 +16,7 @@ sudo apt-get install libapache2-mod-wsgi-py3  python3-pi git
 mkdir -p /srv/src
 cd /srv/src
 sudo git clone https://github.com/startach/dMelechServer.git
-sudo pip install -r dMelechServer/scripts/requirements.txt
+sudo pip3 install -r dMelechServer/scripts/requirements.txt
 
 sudo cp /srv/src/dMelechServer/apache_conf/jworld.startach.org.il.conf /etc/apache2/sites-available
 sudo a2ensite jworld.startach.org.il
