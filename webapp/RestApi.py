@@ -6,8 +6,8 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 app.json_encoder = ExtendedJSONEncoder
-cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
-
+#cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app)
 
 @app.route('/synagogue/<string:syn_id>', methods=['GET', 'PUT'])
 def synagogue(syn_id):
