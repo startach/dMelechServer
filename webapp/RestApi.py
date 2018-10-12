@@ -31,7 +31,7 @@ def synagogue(syn_id):
         return jsonify(False), 500
 
 
-@app.route('/synagogue/', methods=['POST'])
+@app.route('/synagogue', methods=['POST'])
 def synagogue_post():
     j = request.get_json()
     res = create_synagogue(j)
