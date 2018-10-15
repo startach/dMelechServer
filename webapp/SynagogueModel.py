@@ -150,10 +150,10 @@ def create_synagogue(synagogue_object):
     #         location = None
     #
     for minyan in synagogue_object['minyans']:
-        minyan.hour_float = time_to_float(minyan.hour)
+        minyan["hour_float"] = time_to_float(minyan["hour"]) if minyan["hour"] is not None else None
 
     for lesson in synagogue_object['lessons']:
-        lesson.hour_float = time_to_float(lesson.hour)
+        lesson["hour_float"] = time_to_float(lesson["hour"]) if lesson["hour"] is not None else None
 
     syn = Synagogue(
         address=synagogue_object['address'],
