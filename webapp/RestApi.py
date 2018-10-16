@@ -6,8 +6,9 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 app.json_encoder = ExtendedJSONEncoder
-#cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
+
 CORS(app)
+
 
 @app.route('/synagogue/<string:syn_id>', methods=['GET', 'PUT'])
 def synagogue(syn_id):
@@ -35,9 +36,10 @@ def synagogue(syn_id):
 def synagogue_post():
     j = request.get_json()
     res = create_synagogue(j)
-    if res:
+    if res[0]:
         return jsonify(True), 200
-    return jsonify(False), 500
+
+    return jsonify(res[1]), 400
 
 
 # final
@@ -45,14 +47,14 @@ def synagogue_post():
 def synagogue_search():
     j = request.get_json()
     res = search_synagogue(j)
-    if res is not False:
+    if res[0] is not False:
         return jsonify({
             "status": "OK",
-            "content": res
+            "content": res[1]
         }), 200
     return jsonify({
         "status": "ERROR",
-        "content": {}
+        "content": str(res[1])
     }), 400
 
 

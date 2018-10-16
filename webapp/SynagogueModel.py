@@ -101,12 +101,12 @@ class Synagogue(MongoModel):
     address = fields.CharField(blank=True)
     location = fields.PointField(blank=True)
     nosach = fields.CharField(blank=True)
-    phone_number = fields.CharField(blank=True)
+    phone_number = fields.ListField(blank=True, required=False)
     externals = fields.EmbeddedDocumentField(Externals, blank=True)
-    minyans = fields.EmbeddedDocumentListField(Minyan, blank=True)
-    lessons = fields.EmbeddedDocumentListField(Lesson, blank=True)
-    image = fields.ImageField(blank=True)
-    comments = fields.CharField(blank=True)
+    minyans = fields.EmbeddedDocumentListField(Minyan, blank=True, required=False)
+    lessons = fields.EmbeddedDocumentListField(Lesson, blank=True, required=False)
+    image = fields.ImageField(blank=True, required=False)
+    comments = fields.CharField(blank=True, required=False)
 
     def json(self):
         return {
@@ -149,32 +149,47 @@ def create_synagogue(synagogue_object):
     #     else:
     #         location = None
     #
+    req_params = ['name', 'address', 'location', 'nosach', 'phone_number', 'externals',
+                  'minyans', 'lessons', 'comments']
+
+    for param in req_params:
+        if param not in synagogue_object:
+            return False, "Missing Parameters ({0}), Can't create syn object".format(param)
+
+    # if 'minyans' in synagogue_object:
     for minyan in synagogue_object['minyans']:
         minyan["hour_float"] = time_to_float(minyan["hour"]) if minyan["hour"] is not None else None
 
+    # if 'lessons' in synagogue_object:
     for lesson in synagogue_object['lessons']:
         lesson["hour_float"] = time_to_float(lesson["hour"]) if lesson["hour"] is not None else None
 
-    syn = Synagogue(
-        address=synagogue_object['address'],
-        externals=synagogue_object['externals'],
-        location=synagogue_object['location'],
-        name=synagogue_object['name'],
-        nosach=synagogue_object['nosach'],
-        phone_number=synagogue_object['phone_number'],
-        image=None,
-        comments=synagogue_object['comments'],
-        lessons=synagogue_object['lessons'],
-        minyans=synagogue_object['minyans'])
+    try:
+        syn = Synagogue(
+            address=synagogue_object['address'],
+            externals=synagogue_object['externals'],
+            location=synagogue_object['location'],
+            name=synagogue_object['name'],
+            nosach=synagogue_object['nosach'],
+            phone_number=synagogue_object['phone_number'],
+            image=None,
+            comments=synagogue_object['comments'],
+            lessons=synagogue_object['lessons'],
+            minyans=synagogue_object['minyans'])
+
+    except Exception as error:
+        print("Error at: " + str(error))
+        return False, "Wrong Parameters, Can't create syn object"
 
     try:
         result = syn.save()
         if result:
-            return True
+            return True, ""
         else:
-            return False
-    except Exception:
-        return False
+            return False, "Error at inserting new data"
+    except Exception as e:
+        print("Unexpected error: " + e)
+        return False, "Unexpected error!"
 
 
 def get_synagogue(syn_id):
@@ -199,7 +214,7 @@ def update_synagogue(syn_id, update_object):
         return False
 
 
-#final
+# final
 def search_synagogue(json_parameters):
     inner_query = {}
 
@@ -211,19 +226,6 @@ def search_synagogue(json_parameters):
     for key, value in j.items():
         v = value
         k = key
-        
-        if key == 'name':
-            v = {"$regex": '.*' + value + '.*'}
-        elif key == 'address':
-            v = {"$regex": '.*'  + value + '.*'}
-        elif key == 'days':
-            k = "minyans.days"
-            v = {"$all": value}
-        elif key == 'hours':
-            v = {"$gt": time_to_float(hour=value[0]), "$lt": time_to_float(hour=value[1])}
-            k = "minyans.hour_float"
-        elif key in ["mikve", "parking", "disabled_access", "shtiblach" ]:
-            k = "externals." + key
 
         if value == 'true':
             v = True
@@ -232,7 +234,32 @@ def search_synagogue(json_parameters):
         elif value in ('none', 'null'):
             v = None
 
+        if key == 'name':
+            if not isinstance(value, str):
+                return False, "Wrong Type: " + str(key)
+            v = {"$regex": '.*' + value + '.*'}
+        elif key == 'address':
+            if not isinstance(value, str):
+                return False, "Wrong Type: " + str(key)
+            v = {"$regex": '.*' + value + '.*'}
+        elif key == 'days':
+            if not isinstance(value, list):
+                return False, "Wrong Type: " + str(key)
+            k = "minyans.days"
+            v = {"$all": value}
+        elif key == 'hours':
+            if not isinstance(value, float) or not isinstance(value, int):
+                return False, "Wrong Type: " + str(key)
+            v = {"$gt": time_to_float(hour=value[0]), "$lt": time_to_float(hour=value[1])}
+            k = "minyans.hour_float"
+        elif key in ["mikve", "parking", "disabled_access", "shtiblach"]:
+            if not isinstance(value, bool):
+                return False, "Wrong Type: " + str(key)
+            k = "externals." + key
+
         if key in ['lat', 'lon', 'min_radius', 'max_radius']:
+            if not isinstance(value, (int, float)):
+                return False, "Wrong Type: " + str(key)
             keys.append(key)
         else:
             inner_query[k] = v
@@ -249,9 +276,11 @@ def search_synagogue(json_parameters):
                 "$minDistance": int(int(json_parameters['min_radius']) * 1000),
             }
         }
+    elif 'lat' in keys or 'lon' in keys or 'min_radius' in keys or 'max_radius' in keys:
+        return False, "Missing keys"
 
     try:
         res = list(Synagogue.objects.raw(inner_query).limit(15))
-        return res
-    except Exception:
-        return False
+        return True, res
+    except Exception as e:
+        return False, e
