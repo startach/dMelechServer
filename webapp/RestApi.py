@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from ExtendedJSONEncoder import ExtendedJSONEncoder
-from SynagogueMongo import get_synagogue, update_synagogue, create_synagogue, search_synagogue, search_synagogue_name
+from SynagogueMongo import get_synagogue, update_synagogue, create_synagogue, search_synagogue
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -29,12 +29,6 @@ def synagogue(syn_id):
         if res:
             return jsonify(res), 200
         return jsonify(False), 500
-
-
-@app.route('/synagogue/byName', methods=['GET'])
-def synagogue_name():
-    name = request.args.get("name")
-    return jsonify(search_synagogue_name(name))
 
 
 @app.route('/synagogue', methods=['POST'])
