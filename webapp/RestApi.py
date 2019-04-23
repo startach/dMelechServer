@@ -55,11 +55,11 @@ def synagogue_search():
     if res[0] is not False:
         return jsonify({
             "status": "OK",
-            "content": res[1]
+            "data": res[1]
         }), 200
     return jsonify({
         "status": "ERROR",
-        "content": str(res[1])
+        "data": str(res[1])
     }), 400
 
 
