@@ -61,7 +61,7 @@ def create_synagogue(synagogue_object):
         return False, "Unexpected error!"
 
 
-def get_synagogue(syn_id):
+def get_synagogue_by_id(syn_id):
     try:
         model = synagogues_db.find_one({'_id': ObjectId(syn_id)})
         return convert_model_to_synagogue(model)

@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from ExtendedJSONEncoder import ExtendedJSONEncoder
-from SynagogueMongo import get_synagogue, update_synagogue, create_synagogue, search_synagogue
+from SynagogueMongo import get_synagogue_by_id, update_synagogue, create_synagogue, search_synagogue
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -9,30 +9,31 @@ app.json_encoder = ExtendedJSONEncoder
 CORS(app)
 
 
-@app.route('/synagogue/<string:syn_id>', methods=['GET', 'PUT'])
-def synagogue(syn_id):
-    if request.method == 'GET':
-        res = get_synagogue(syn_id)
-        if res:
-            return jsonify({
-                "status": "OK",
-                "content": res
-            }), 200
+@app.route('/synagogue/<string:syn_id>', methods=['GET'])
+def get_synagogue(syn_id):
+    res = get_synagogue_by_id(syn_id)
+    if res:
         return jsonify({
-            "status": "ERROR",
-            "content": {}
-        }), 400
+            "status": "OK",
+            "content": res
+        }), 200
+    return jsonify({
+        "status": "ERROR",
+        "content": {}
+    }), 400
 
-    else:
-        j = request.get_json()
-        res = update_synagogue(syn_id, j)
-        if res:
-            return jsonify(res), 200
-        return jsonify(False), 500
+
+@app.route('/synagogue/<string:syn_id>', methods=['PUT'])
+def put_synagogue(syn_id):
+    j = request.get_json()
+    res = update_synagogue(syn_id, j)
+    if res:
+        return jsonify(res), 200
+    return jsonify(False), 500
 
 
 @app.route('/synagogue', methods=['POST'])
-def synagogue_post():
+def post_synagogue():
     j = request.get_json()
     res = create_synagogue(j)
     if res[0]:
@@ -43,7 +44,7 @@ def synagogue_post():
 
 # final
 @app.route('/synagogue/search', methods=['POST'])
-def synagogue_search():
+def post_synagogue_search():
     j = request.get_json()
     res = search_synagogue(j)
     if res[0] is not False:
