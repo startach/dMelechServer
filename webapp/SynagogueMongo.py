@@ -49,13 +49,13 @@ def create_synagogue(synagogue_object):
         if synagogues_db.find_one({
                 'address': synagogue_object['address'],
                 'name': synagogue_object['name']}) is not None:
-            return False, "בית הכנסת כבר קיים במערכת"
+            return False, "Synagogue already exists"
         model = convert_synagogue_to_model(synagogue_object)
         synagogue_id = synagogues_db.insert_one(model).inserted_id
         if synagogue_id:
             return True, synagogue_id
         else:
-            return False, "אירעה שגיאה בהוספת בית הכנסת"
+            return False, "Error in creating synagogue"
     except Exception as e:
         print("Unexpected error: " + e)
         return False, "Unexpected error!"
