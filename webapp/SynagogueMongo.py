@@ -97,7 +97,7 @@ def search_synagogue(json_parameters):
 
         if key in {'name', 'address'}:
             if not isinstance(value, str):
-                return False, "Wrong Type: " + str(key)
+                return False, "Wrong Type: " + str(key) + " type of value is: " + type(value)
             inner_query[key] = {"$regex": '.*' + value + '.*'}
         elif key == 'days':
             if not isinstance(value, list):
