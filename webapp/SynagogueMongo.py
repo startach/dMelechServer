@@ -97,11 +97,11 @@ def search_synagogue(json_parameters):
 
         if key in {'name', 'address'}:
             if not isinstance(value, str):
-                return False, "Wrong Type: " + str(key) + " type of value is: " + value
+                return False, "Wrong Type: " + str(key) + " type of value is: " + type(value)
             inner_query[key] = {"$regex": '.*' + value + '.*'}
         elif key == 'days':
             if not isinstance(value, list):
-                return False, "Wrong Type: " + str(key)
+                return False, "Wrong Type: " + str(key) + " type of value is: " + type(value)
             inner_query["minyans.days"] = {"$all": value}
         elif key == 'hours':
             if not isinstance(value[0], str) or not isinstance(value[1], str):
@@ -110,11 +110,11 @@ def search_synagogue(json_parameters):
             inner_query["minyans.endTime"] = {"$lte": time_to_float(hour=value[1])}
         elif key in ["mikve", "parking", "disabled_access", "shtiblach"]:
             if not isinstance(value, bool):
-                return False, "Wrong Type: " + str(key)
+                return False, "Wrong Type: " + str(key) + " type of value is: " + type(value)
             inner_query["externals." + key] = value
         elif key in ['lat', 'lon', 'min_radius', 'max_radius']:
             if not isinstance(value, (int, float)):
-                return False, "Wrong Type: " + str(key)
+                return False, "Wrong Type: " + str(key) + " type of value is: " + type(value)
             range_keys.append(key)
 
     if {'lat', 'lon', 'min_radius', 'max_radius'}.issubset(range_keys):
