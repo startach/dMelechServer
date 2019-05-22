@@ -33,7 +33,10 @@ def float_to_time(time):
 def convert_model_to_synagogue(model):
     for minyan in model["minyans"]:
         minyan["startTime"] = float_to_time(minyan["startTime"])
-        minyan["endTime"] = float_to_time(minyan["endTime"])
+        try:
+            minyan["endTime"] = float_to_time(minyan["endTime"])
+        except Exception as e:
+            minyan["endTime"] = None
     return model
 
 
