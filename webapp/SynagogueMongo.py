@@ -90,6 +90,8 @@ def search_synagogue(json_parameters):
 
     range_keys = []
 
+    lim = 15
+
     for key, value in json_parameters.items():
         if value == 'true':
             value = True
@@ -132,11 +134,12 @@ def search_synagogue(json_parameters):
                 "$minDistance": int(int(json_parameters['min_radius']) * 1000),
             }
         }
+        lim = 500
     elif 'lat' in range_keys or 'lon' in range_keys or 'min_radius' in range_keys or 'max_radius' in range_keys:
         return False, "Missing keys"
 
     try:
-        models = list(synagogues_db.find(inner_query).limit(15))
+        models = list(synagogues_db.find(inner_query).limit(lim))
         result = []
         for model in models:
             synagogue = convert_model_to_synagogue(model)
